@@ -1,13 +1,13 @@
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { ThemedText } from "./themed-text";
-import { ThemedView } from "./themed-view";
 
 type Props = {
     title: string;
     streak: number;
     isCompleted?: boolean;
     priority?: 'low' | 'mid' | 'high';
+    onToggle?: () => void;
 }
 
 const priorityStyles = {
@@ -25,12 +25,29 @@ const priorityStyles = {
     },
 } as const;
 
-export default function HabitCard({ title, streak, isCompleted = false, priority = 'low' }: Props) {
-    const card = useThemeColor({}, 'surface')
+export default function HabitCard({
+    title,
+    streak,
+    isCompleted = false,
+    priority = 'low',
+    onToggle
+}: Props) {
+    const surface = useThemeColor({}, 'surface')
+    const success = useThemeColor({}, 'success')
     const border = useThemeColor({}, 'border')
     const p = priorityStyles[priority];
+
     return (
-        <ThemedView style={[styles.card, { backgroundColor: card, borderColor: border }, isCompleted && styles.cardDone]}>
+        <Pressable
+            onPress={onToggle}
+            style={({ pressed }) => [styles.card,
+            {
+                backgroundColor: surface,
+                opacity: pressed ? 0.8 : 1,
+                borderColor: isCompleted ? success : border
+            },
+            isCompleted && styles.cardDone]}
+        >
             <View style={styles.row}>
                 <ThemedText style={styles.title}>{title}</ThemedText>
                 <ThemedText style={[styles.badge, { backgroundColor: p.backgroundColor, color: p.color }]}>
@@ -41,7 +58,7 @@ export default function HabitCard({ title, streak, isCompleted = false, priority
                 {isCompleted && <ThemedText style={styles.badge}>✔ Hoy</ThemedText>}
                 <ThemedText style={styles.streak}>🔥 {streak} dias</ThemedText>
             </View>
-        </ThemedView>
+        </Pressable>
     )
 }
 

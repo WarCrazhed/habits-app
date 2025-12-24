@@ -1,4 +1,6 @@
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView } from "./themed-view";
 
 type Props = {
@@ -6,8 +8,15 @@ type Props = {
 }
 
 export default function Screen({ children }: Props) {
+    const bg = useThemeColor({}, 'background');
+    const insets = useSafeAreaInsets();
     return (
-        <ThemedView style={styles.screen}>
+        <ThemedView style={[styles.screen, {
+            backgroundColor: bg,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom + 16,
+            paddingHorizontal: 16
+        }]}>
             {children}
         </ThemedView>
     )
@@ -16,9 +25,6 @@ export default function Screen({ children }: Props) {
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        paddingHorizontal: 16,
-        paddingVertical: 20,
         gap: 16,
-        paddingTop: 40,
     },
 })
