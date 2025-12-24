@@ -3,9 +3,13 @@ import HabitGreeting from "@/components/HabitGreeting";
 import PrimaryButton from "@/components/PrimaryButton";
 import ProfileHeader from "@/components/ProfileHeader";
 import Screen from "@/components/Screen";
+import { ThemedText } from "@/components/themed-text";
+import { useHabits } from "@/context/HabitsContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Alert, FlatList, ListRenderItemInfo, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Habit = {
   id: number | string;
@@ -22,42 +26,24 @@ const initialState: Habit[] = [
 ]
 
 export default function HomeScreen() {
+  const { loading, habits, addHabit, toggleHabit } = useHabits();
+
   const [items, setItems] = useState<Habit[]>(initialState);
   const [nuevo, setNuevo] = useState<string>('');
 
-  const toggle = useCallback((id: number | string) => {
-    setItems((prev) =>
-      prev.map((habit: Habit) => {
-        if (habit.id !== id) return habit
-        const completed = !habit.isCompleted
-        return {
-          ...habit,
-          isCompleted: completed,
-          streak: completed ? habit.streak + 1 : Math.max(0, habit.streak - 1)
-        }
-      })
-    )
-  }, [])
-
-  const addHabit = useCallback(() => {
-    const title = nuevo.trim();
-    if (!title) return;
-    setItems((prev) => [{
-      id: Date.now(),
-      title,
-      streak: 0,
-      isCompleted: false,
-      priority: 'low',
-    }, ...prev])
-    setNuevo("")
-  }, [nuevo])
-
   const border = useThemeColor({}, 'border')
   const surface = useThemeColor({}, 'surface')
-  const primary = useThemeColor({}, 'primary')
-  const onPrimary = useThemeColor({}, 'onPrimary')
   const text = useThemeColor({}, 'text')
   const muted = useThemeColor({}, 'muted')
+
+  const insets = useSafeAreaInsets();
+
+  const onAdd = useCallback(() => {
+    const title = nuevo.trim();
+    if (!title) return;
+    addHabit(title);
+    setNuevo("");
+  }, [nuevo, addHabit]);
 
   const total = items.length;
   const completed = useMemo(
@@ -65,16 +51,59 @@ export default function HomeScreen() {
     [items]
   )
 
+  const keyExtractor = useCallback((item: Habit) => item.id.toString(), []);
+  const renderItem = useCallback(({ item }: ListRenderItemInfo<any>) => {
+    const isToday = item.lastDoneAt ? new Date(item.lastDoneAt).toDateString() === new Date().toDateString() : false;
+    return (
+      <HabitCard
+        key={item.id}
+        title={item.title}
+        streak={item.streak}
+        isCompleted={item.isCompleted}
+        priority={item.priority}
+        onToggle={() => toggleHabit(item.id)}
+      />
+    )
+  }, [toggleHabit]);
+
+  const ItemSeparator = useCallback(() => <View style={{ height: 12 }} />, []);
+  const Empty = () => (
+    <View style={{ paddingVertical: 32, alignItems: 'center', gap: 8 }}>
+      <ThemedText>Aún no tienes hábitos. Crea el primero</ThemedText>
+    </View>
+  );
+
+  if (loading) return (
+    <Screen>
+      <ThemedText>Cargando hábitos...</ThemedText>
+    </Screen>
+  )
+
+  const isSameDay = (a: string | number | Date, b: string | number | Date) => {
+    new Date(a).toDateString() === new Date(b).toDateString()
+  }
+
   return (
     <Screen>
       <ProfileHeader name="Mario Zamora" role="dev" />
       <HabitGreeting nombre="Ada" />
       <View style={[styles.row, { alignItems: 'center' }]}>
+        <Pressable
+          onPress={async () => {
+            try {
+              await AsyncStorage.clear();
+              Alert.alert('Éxito', 'Hábitos borrados');
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo borrar los hábitos');
+              console.warn(error);
+            }
+          }}
+        />
         <TextInput
           value={nuevo}
           onChangeText={setNuevo}
           placeholder="Agregar hábito"
-          onSubmitEditing={addHabit}
+          onSubmitEditing={onAdd}
           style={[
             styles.input,
             {
@@ -85,20 +114,21 @@ export default function HomeScreen() {
           ]}
           placeholderTextColor={muted}
         />
-        <PrimaryButton title="Añadir" onPress={addHabit} />
+        <PrimaryButton title="Añadir" onPress={onAdd} />
       </View>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32, gap: 16 }} showsVerticalScrollIndicator={false}>
-        {items.map((habit) => (
-          <HabitCard
-            key={habit.id}
-            title={habit.title}
-            streak={habit.streak}
-            isCompleted={habit.isCompleted}
-            priority={habit.priority}
-            onToggle={() => toggle(habit.id)}
-          />
-        ))}
-      </ScrollView>
+      <FlatList
+        data={habits}
+        renderItem={renderItem}
+        ItemSeparatorComponent={ItemSeparator}
+        ListEmptyComponent={Empty}
+        contentContainerStyle={{
+          paddingVertical: 16,
+          paddingBottom: insets.bottom + 16
+        }}
+        initialNumToRender={8}
+        windowSize={10}
+        showsVerticalScrollIndicator={false}
+      />
     </Screen>
   );
 }
