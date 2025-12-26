@@ -8,7 +8,6 @@ import { useCelebration } from "@/context/CelebrationProvider";
 import { useHabits } from "@/context/HabitsContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { getMotivation } from "@/services/motivation";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useMemo, useState } from "react";
 import { Alert, FlatList, ListRenderItemInfo, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,7 +32,7 @@ export default function HomeScreen() {
   const [items, setItems] = useState<Habit[]>(initialState);
   const [nuevo, setNuevo] = useState<string>('');
 
-  const { loading, habits, addHabit, toggleHabit } = useHabits();
+  const { loading, habits, addHabit, toggleHabit, clearHabits } = useHabits();
   const { celebrate } = useCelebration()
 
   const border = useThemeColor({}, 'border')
@@ -101,18 +100,28 @@ export default function HomeScreen() {
     <Screen>
       <ProfileHeader name="Mario Zamora" role="dev" />
       <HabitGreeting nombre="Ada" />
+      <Pressable
+        onPress={() => {
+          Alert.alert(
+            'Confirmar',
+            '¿Estás seguro de que quieres borrar todos los hábitos?',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              {
+                text: 'Eliminar',
+                style: 'destructive',
+                onPress: () => {
+                  clearHabits();
+                  Alert.alert('Éxito', 'Habitos borrados');
+                }
+              }
+            ]
+          );
+        }}
+      >
+        <ThemedText>Eliminar todos</ThemedText>
+      </Pressable>
       <View style={[styles.row, { alignItems: 'center' }]}>
-        <Pressable
-          onPress={async () => {
-            try {
-              await AsyncStorage.clear();
-              Alert.alert('Éxito', 'Hábitos borrados');
-            } catch (error) {
-              Alert.alert('Error', 'No se pudo borrar los hábitos');
-              console.warn(error);
-            }
-          }}
-        />
         <TextInput
           value={nuevo}
           onChangeText={setNuevo}

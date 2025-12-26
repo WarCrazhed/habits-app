@@ -7,37 +7,37 @@ export type Suggestion = {
 }
 
 const CATALOG: Record<string, Omit<Suggestion, "id">> = {
-    "water-energy": {
+    "energy-water": {
         "title": "Drink water",
         "subtitle": "205 ml",
         "emoji": "💧",
         "priority": "low"
     },
-    "walk-energy": {
+    "energy-walk": {
         "title": "Walk for 10 minutes",
         "subtitle": "Fresh air",
         "emoji": "🍃",
         "priority": "mid"
     },
-    "breathe-energy": {
+    "energy-breathe": {
         "title": "Breathe for 1 minute",
         "subtitle": "4-7-8 technique",
         "emoji": "😮‍💨",
         "priority": "low"
     },
-    "reading-focus": {
+    "focus-reading": {
         "title": "Read for 10 minutes",
         "subtitle": "Relevant topic",
         "emoji": "📚",
         "priority": "low"
     },
-    "pomodoro-focus": {
+    "focus-pomodoro": {
         "title": "Pomodoro 25",
         "subtitle": "1 deep block",
         "emoji": "🕑",
         "priority": "mid"
     },
-    "notification-focus": {
+    "focus-notification": {
         "title": "Silence for 1 hour",
         "subtitle": "Stay focused",
         "emoji": "🔕",
@@ -50,10 +50,12 @@ export type CategoryKey = "energy" | "focus";
 export async function suggestFor(category: CategoryKey) {
     await new Promise(resolve => setTimeout(resolve, 4000));
     const keys = Object.keys(CATALOG).filter((key) => key.startsWith(category));
-    return keys.map((key, index) => ({
-        id: `${key}-${index}`,
+
+    const suggestions = keys.map((key, index) => ({
+        id: `${key} - ${index}`,
         ...CATALOG[key]
     }));
+    return suggestions;
 }
 
 export async function suggestViaAI(

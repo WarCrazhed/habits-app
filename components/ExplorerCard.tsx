@@ -1,5 +1,6 @@
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { ThemedText } from "./themed-text";
 
 type Props = {
     emoji?: string;
@@ -33,8 +34,8 @@ export default function ExplorerCard({ emoji = "✨", title, subtitle, onPress }
                 <Text style={styles.emoji}>{emoji}</Text>
             </View>
             <View style={styles.textBox}>
-                <Text style={styles.title}>{title}</Text>
-                <Text style={styles.subtitle}>{subtitle}</Text>
+                <ThemedText style={styles.title}>{title}</ThemedText>
+                <ThemedText style={styles.subtitle}>{subtitle}</ThemedText>
             </View>
         </Pressable>
     )

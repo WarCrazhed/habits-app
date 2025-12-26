@@ -13,12 +13,14 @@ type HabitsContextType = {
     loading: boolean;
     addHabit: (title: string, priority?: Priority) => void;
     toggleHabit: (id: number | string) => void;
+    clearHabits: () => void;
 };
 
 type Action =
     | { type: 'HYDRATE'; payload: Habit[]; }
     | { type: 'ADD'; title: string; priority: Priority | undefined; }
     | { type: 'TOGGLE'; id: number | string; today: Date; }
+    | { type: 'CLEAR'; }
 
 const STORAGE_KEY = 'habits:v1';
 
@@ -76,6 +78,8 @@ function reducer(state: State, action: Action): State {
             })
             return { ...state, habits: update }
         }
+        case 'CLEAR':
+            return { ...state, habits: [] }
         default:
             return state;
     }
@@ -132,12 +136,17 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'TOGGLE', id, today: new Date() });
     }, [])
 
+    const clearHabits = useCallback(() => {
+        dispatch({ type: 'CLEAR' });
+    }, [])
+
     const value = useMemo(() => ({
         loading: state.loading,
         habits: state.habits,
         addHabit,
         toggleHabit,
-    }), [state.loading, state.habits, addHabit, toggleHabit])
+        clearHabits,
+    }), [state.loading, state.habits, addHabit, toggleHabit, clearHabits])
 
     return (
         <HabitsContext.Provider value={value}>
