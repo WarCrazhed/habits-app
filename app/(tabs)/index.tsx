@@ -4,8 +4,10 @@ import PrimaryButton from "@/components/PrimaryButton";
 import ProfileHeader from "@/components/ProfileHeader";
 import Screen from "@/components/Screen";
 import { ThemedText } from "@/components/themed-text";
+import { useCelebration } from "@/context/CelebrationProvider";
 import { useHabits } from "@/context/HabitsContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { getMotivation } from "@/services/motivation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useMemo, useState } from "react";
 import { Alert, FlatList, ListRenderItemInfo, Pressable, StyleSheet, TextInput, View } from "react-native";
@@ -19,6 +21,8 @@ type Habit = {
   priority: 'low' | 'mid' | 'high';
 }
 
+type HabitItem = ReturnType<typeof useHabits>["habits"][number]
+
 const initialState: Habit[] = [
   { id: 1, title: "Beber Agua", streak: 3, isCompleted: true, priority: 'low' },
   { id: 2, title: "Leer 10 minutos", streak: 1, isCompleted: false, priority: 'mid' },
@@ -26,10 +30,11 @@ const initialState: Habit[] = [
 ]
 
 export default function HomeScreen() {
-  const { loading, habits, addHabit, toggleHabit } = useHabits();
-
   const [items, setItems] = useState<Habit[]>(initialState);
   const [nuevo, setNuevo] = useState<string>('');
+
+  const { loading, habits, addHabit, toggleHabit } = useHabits();
+  const { celebrate } = useCelebration()
 
   const border = useThemeColor({}, 'border')
   const surface = useThemeColor({}, 'surface')
@@ -51,20 +56,29 @@ export default function HomeScreen() {
     [items]
   )
 
+  async function onToggleWithCelebration(item: HabitItem) {
+    const wasToday = item.lastDoneAt ? isSameDay(item.lastDoneAt, new Date()) : false;
+    toggleHabit(item.id)
+    if (!wasToday) {
+      const msg = await getMotivation(item.title)
+      celebrate(msg)
+    };
+  }
+
   const keyExtractor = useCallback((item: Habit) => item.id.toString(), []);
-  const renderItem = useCallback(({ item }: ListRenderItemInfo<any>) => {
+  const renderItem = useCallback(({ item }: ListRenderItemInfo<HabitItem>) => {
     const isToday = item.lastDoneAt ? new Date(item.lastDoneAt).toDateString() === new Date().toDateString() : false;
     return (
       <HabitCard
         key={item.id}
         title={item.title}
         streak={item.streak}
-        isCompleted={item.isCompleted}
+        isCompleted={isToday}
         priority={item.priority}
-        onToggle={() => toggleHabit(item.id)}
+        onToggle={() => onToggleWithCelebration(item)}
       />
     )
-  }, [toggleHabit]);
+  }, [onToggleWithCelebration]);
 
   const ItemSeparator = useCallback(() => <View style={{ height: 12 }} />, []);
   const Empty = () => (

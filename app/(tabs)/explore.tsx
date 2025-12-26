@@ -1,12 +1,12 @@
 import QuickAddChips from '@/components/QuickAddChips';
 import Screen from '@/components/Screen';
 import { ThemedText } from '@/components/themed-text';
-import { useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { useHabits } from '@/context/HabitsContext';
+import { View } from 'react-native';
 
 export default function TabTwoScreen() {
-  const [picked, setPicked] = useState<string[]>([]);
-  const onPick = (title: string) => setPicked((prev) => (prev.includes(title) ? prev : [...prev, title]));
+  const { addHabit } = useHabits();
+  const onPick = (title: string) => addHabit(title, 'low');
 
   return (
     <Screen>
@@ -14,16 +14,19 @@ export default function TabTwoScreen() {
         <ThemedText style={{ fontWeight: '700', fontSize: 18 }}>
           Sugerencias rápidas
         </ThemedText>
-        <QuickAddChips onPick={onPick} />
         <ThemedText>
+          Desliza los chips y toca para crear el hábito al instante.
+        </ThemedText>
+        <QuickAddChips onPick={onPick} />
+        {/* <ThemedText>
           Tus selecciones
         </ThemedText>
-        <FlatList
+                <FlatList
           data={picked}
           keyExtractor={(item) => item}
           renderItem={({ item }) => <ThemedText>- {item}</ThemedText>}
           ListEmptyComponent={<ThemedText>Toca un chip para añadir</ThemedText>}
-        />
+        /> */}
       </View>
     </Screen>
   );
